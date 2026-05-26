@@ -1,0 +1,109 @@
+# 🔌 Wiring Diagram - ESP32 Air Quality Monitoring System
+
+---
+
+## 📡 ESP32 #1 - SENDER (Pengirim Data Sensor)
+
+### Komponen:
+- ESP32-WROOM-32
+- Sharp GP2Y1010AU0F (Sensor Debu PM2.5)
+- DHT22 (Sensor Suhu & Kelembaban)
+
+---
+
+### GP2Y1010AU0F → ESP32 #1
+
+| Sensor (Kabel) | ESP32 Pin |
+|----------------|-----------|
+| LED (putih) | GPIO2 |
+| VO (hitam) | GPIO34 (ADC) |
+| GND | GND |
+| VCC | 5V / VIN |
+
+### DHT22 → ESP32 #1
+
+| Sensor (Kabel) | ESP32 Pin |
+|----------------|-----------|
+| DATA (kuning) | GPIO26 |
+| VCC (merah) | 3.3V |
+| GND (hitam) | GND |
+
+### UART Serial2 → ESP32 #2
+
+| ESP32 #1 | ESP32 #2 |
+|----------|----------|
+| GPIO1 (TX) | GPIO3 (RX) |
+| GPIO3 (RX) | GPIO1 (TX) |
+| GND | GND |
+
+---
+
+## 📡 ESP32 #2 - RECEIVER (Penerima Data & Upload Cloud)
+
+### Komponen:
+- ESP32-WROOM-32
+
+### UART Serial2 ← ESP32 #1
+
+| ESP32 #2 | ESP32 #1 |
+|----------|----------|
+| GPIO1 (TX) | GPIO3 (RX) |
+| GPIO3 (RX) | GPIO1 (TX) |
+| GND | GND |
+
+---
+
+## 🔄 Alur Komunikasi Data
+
+ESP32 #1 (SENDER)
+- Baca sensor debu → PM2.5
+- Baca sensor DHT22 → suhu & kelembaban
+- Format data: `pm25,suhu,hum`
+- Kirim via UART Serial2
+
+⬇️ *(TX: GPIO1 → RX: GPIO3)*
+
+ESP32 #2 (RECEIVER)
+- Terima data dari Serial2
+- Parse CSV
+- Upload via WiFi/HTTP
+
+⬇️ *(HTTP API)*
+
+ThingSpeak Cloud
+- Simpan data time series
+- Visualisasi grafik
+- Dataset untuk prediksi
+
+---
+
+## 📌 Pin Summary
+
+### ESP32 #1 (Sender)
+| Pin | Fungsi |
+|-----|--------|
+| GPIO2 | LED sensor debu |
+| GPIO34 | VO sensor debu (ADC) |
+| GPIO26 | DATA DHT22 |
+| GPIO1 | TX Serial2 |
+| GPIO3 | RX Serial2 |
+| 5V/VIN | VCC sensor debu |
+| 3.3V | VCC DHT22 |
+| GND | Ground semua komponen |
+
+### ESP32 #2 (Receiver)
+| Pin | Fungsi |
+|-----|--------|
+| GPIO1 | TX Serial2 |
+| GPIO3 | RX Serial2 |
+| GND | Ground (harus tersambung ke ESP32 #1) |
+
+---
+
+## ⚠️ Catatan Penting
+
+1. GP2Y1010AU0F pakai 5V — jangan sambung ke 3.3V
+2. DHT22 pakai 3.3V
+3. GND kedua ESP32 harus terhubung (untuk referensi sinyal UART)
+4. TX → RX, RX → TX (cross-connection UART)
+5. Pastikan baud rate kedua ESP32 sama: 115200
